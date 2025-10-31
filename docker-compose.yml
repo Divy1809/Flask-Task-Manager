@@ -1,0 +1,37 @@
+# Docker Compose configuration for Task Manager
+# Supports both Podman and Docker
+
+version: '3.8'
+
+services:
+  taskmanager:
+    build:
+      context: .
+      dockerfile: Containerfile
+    container_name: flask-taskmanager
+    ports:
+      - "5000:5000"
+    environment:
+      - SESSION_SECRET=${SESSION_SECRET:-your-secret-key-change-in-production}
+      - PORT=5000
+      - FLASK_ENV=production
+    volumes:
+      # Persistent volume for SQLite database
+      - taskmanager-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health').read()"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - taskmanager-network
+
+volumes:
+  taskmanager-data:
+    driver: local
+
+networks:
+  taskmanager-network:
+    driver: bridge
